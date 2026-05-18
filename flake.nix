@@ -5,6 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pikvm-kvmd = {
       url = "github:pikvm/kvmd";
       flake = false;
@@ -16,13 +20,28 @@
   };
 
   outputs = inputs @ {flake-parts, ...}:
-    flake-parts.lib.mkFlake {inherit inputs;} {
+    flake-parts.lib.mkFlake {inherit inputs;} ({self, ...}: {
+      imports = [inputs.treefmt-nix.flakeModule];
       systems = ["x86_64-linux" "aarch64-linux"];
       perSystem = {pkgs, ...}: {
-        formatter = pkgs.alejandra;
+        treefmt.programs = {
+          alejandra.enable = true;
+          deadnix = {
+            enable = true;
+            no-lambda-pattern-names = true;
+          };
+          statix = {
+            enable = true;
+            disabled-lints = ["repeated_keys"];
+          };
+        };
         packages.kvmd = pkgs.callPackage ./packages/kvmd.nix {
           inherit (inputs) pikvm-kvmd;
         };
       };
-    };
+      flake.nixosModules.kvmd = {
+        imports = [./modules/kvmd];
+        _module.args.kvmdPackages = self.packages;
+      };
+    });
 }
