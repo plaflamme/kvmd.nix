@@ -9,7 +9,7 @@
 
   ctxServerConf = pkgs.runCommand "kvmd-nginx-ctx-server.conf" {} ''
     substitute ${cfg.configsDir}/nginx/kvmd.ctx-server.conf $out \
-      --replace-quiet /usr/share/janus/javascript ${cfg.package.janusAssets} \
+      --replace-quiet /usr/share/janus/javascript ${cfg.janusAssets} \
       --replace-quiet /etc/kvmd/web.css ${cfg.webCss} \
       --replace-quiet /etc/kvmd/nginx ${cfg.configsDir}/nginx
   '';

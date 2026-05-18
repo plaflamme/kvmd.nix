@@ -9,14 +9,6 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    pikvm-kvmd = {
-      url = "github:pikvm/kvmd";
-      flake = false;
-    };
-    pikvm-packages = {
-      url = "github:pikvm/packages";
-      flake = false;
-    };
   };
 
   outputs = inputs @ {flake-parts, ...}:
@@ -47,7 +39,11 @@
     in {
       imports = [inputs.treefmt-nix.flakeModule];
       systems = ["x86_64-linux" "aarch64-linux"];
-      perSystem = {pkgs, ...}: {
+      perSystem = {
+        pkgs,
+        config,
+        ...
+      }: {
         treefmt.programs = {
           alejandra.enable = true;
           mdformat = {
@@ -63,8 +59,12 @@
             disabled-lints = ["repeated_keys"];
           };
         };
+        packages.pikvm-packages = pkgs.callPackage ./packages/pikvm-packages.nix {};
+        packages.janus-assets = pkgs.callPackage ./packages/janus-assets.nix {
+          inherit (config.packages) pikvm-packages;
+        };
         packages.kvmd = pkgs.callPackage ./packages/kvmd.nix {
-          inherit (inputs) pikvm-kvmd pikvm-packages;
+          inherit (config.packages) pikvm-packages;
         };
       };
       flake.nixosModules =

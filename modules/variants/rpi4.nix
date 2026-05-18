@@ -1,9 +1,10 @@
 {
   pkgs,
   inputs,
+  kvmdPackages,
   ...
 }: let
-  patchDir = "${inputs.pikvm-packages}/packages/linux-rpi-pikvm";
+  patchDir = "${kvmdPackages.${pkgs.stdenv.hostPlatform.system}.pikvm-packages}/packages/linux-rpi-pikvm";
   pikvmKernelPatches = [
     {
       name = "pikvm-hid-remote-wakeup";

@@ -62,6 +62,13 @@ in {
       description = "The kvmd package to use.";
     };
 
+    janusAssets = lib.mkOption {
+      type = lib.types.package;
+      default = kvmdPackages.${pkgs.stdenv.hostPlatform.system}.janus-assets;
+      defaultText = lib.literalExpression "the flake's janus-assets package for this system";
+      description = "Patched Janus web assets (ES-module janus.js + webrtc adapter) served by nginx.";
+    };
+
     variant = lib.mkOption {
       type = lib.types.enum variants;
       description = "PiKVM hardware variant; selects the main config and udev rules from the package.";

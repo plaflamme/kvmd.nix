@@ -14,13 +14,12 @@
   nbd,
   coreutils,
   writeText,
-  runCommand,
-  fetchurl,
+  fetchFromGitHub,
+  nix-update-script,
   glibc,
   libxkbcommon,
   tesseract,
   libraspberrypi,
-  pikvm-kvmd,
   pikvm-packages,
   enableWebterm ? true,
   ocrLanguages ? ["eng"],
@@ -34,19 +33,6 @@
   fstabFile = writeText "kvmd-fstab" ''
     none /var/lib/kvmd/msd none rw,X-kvmd.otgmsd-user=kvmd 0 0
     none /var/lib/kvmd/pst none rw,X-kvmd.pst-user=kvmd-pst,X-kvmd.pst-group=kvmd-pst 0 0
-  '';
-
-  webrtcAdapter = fetchurl {
-    url = "https://raw.githubusercontent.com/webrtcHacks/adapter/v9.0.1/release/adapter.js";
-    hash = "sha256-qJ4ou0JzcZYb0z+094G11tQBAHOuYgP5G2qTTyYvzDw=";
-  };
-  # kvmd needs PiKVM's janus-gateway-pikvm 0001-js.patch on janus.js.
-  janusAssets = runCommand "kvmd-janus-assets" {} ''
-    mkdir -p $out
-    cp ${janus-gateway.src}/html/demos/janus.js $out/janus.js
-    cp ${webrtcAdapter} $out/adapter.js
-    chmod +w $out/janus.js
-    patch $out/janus.js < ${pikvm-packages}/packages/janus-gateway-pikvm/0001-js.patch
   '';
 
   # deps mirror the Arch PKGBUILD; kvmd's setup.py declares none
@@ -116,12 +102,17 @@
     libtesseract = "${tesseractOcr}/lib/libtesseract.so.5";
   };
 in
-  python.pkgs.buildPythonApplication {
+  python.pkgs.buildPythonApplication (finalAttrs: {
     pname = "kvmd";
     version = "4.168";
     format = "setuptools";
 
-    src = pikvm-kvmd;
+    src = fetchFromGitHub {
+      owner = "pikvm";
+      repo = "kvmd";
+      tag = "v${finalAttrs.version}";
+      hash = "sha256-oZlBZdlfcvwpjGSWNLLznVe+TA3zQLyTZ31HOA2wj0Y=";
+    };
 
     propagatedBuildInputs = allPythonDeps python.pkgs;
 
@@ -208,7 +199,7 @@ in
 
     passthru = {
       v4l-utils = v4lUtilsCli;
-      inherit janusAssets;
+      updateScript = nix-update-script {extraArgs = ["--flake"];};
     };
 
     meta = {
@@ -218,4 +209,4 @@ in
       platforms = lib.platforms.linux;
       mainProgram = "kvmd";
     };
-  }
+  })
