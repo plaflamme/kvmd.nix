@@ -24,7 +24,7 @@
           inputs.nixos-hardware.nixosModules.raspberry-pi-4
           ./modules/variants/${variant}.nix
         ];
-        _module.args.inputs = inputs;
+        _module.args.kvmdNixosHardware = inputs.nixos-hardware;
       };
 
       mkVariantConfiguration = variant:
@@ -39,11 +39,7 @@
     in {
       imports = [inputs.treefmt-nix.flakeModule];
       systems = ["x86_64-linux" "aarch64-linux"];
-      perSystem = {
-        pkgs,
-        config,
-        ...
-      }: {
+      perSystem = {pkgs, ...}: {
         treefmt.programs = {
           alejandra.enable = true;
           mdformat = {
@@ -59,12 +55,10 @@
             disabled-lints = ["repeated_keys"];
           };
         };
-        packages.pikvm-packages = pkgs.callPackage ./packages/pikvm-packages.nix {};
-        packages.janus-assets = pkgs.callPackage ./packages/janus-assets.nix {
-          inherit (config.packages) pikvm-packages;
-        };
-        packages.kvmd = pkgs.callPackage ./packages/kvmd.nix {
-          inherit (config.packages) pikvm-packages;
+        packages = rec {
+          janus-assets = pkgs.callPackage ./packages/janus-assets.nix {inherit pikvm-packages;};
+          kvmd = pkgs.callPackage ./packages/kvmd.nix {inherit pikvm-packages;};
+          pikvm-packages = pkgs.callPackage ./packages/pikvm-packages.nix {};
         };
       };
       flake.nixosModules =

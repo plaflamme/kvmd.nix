@@ -1,7 +1,7 @@
 {
   pkgs,
-  inputs,
   kvmdPackages,
+  kvmdNixosHardware,
   ...
 }: let
   patchDir = "${kvmdPackages.${pkgs.stdenv.hostPlatform.system}.pikvm-packages}/packages/linux-rpi-pikvm";
@@ -34,7 +34,7 @@ in {
   # nixos-hardware's kernel.nix ignores boot.kernelPatches; patches must
   # go through argsOverride (nixos-hardware#1745).
   boot.kernelPackages = let
-    baseKernel = pkgs.callPackage "${inputs.nixos-hardware}/raspberry-pi/common/kernel.nix" {rpiVersion = 4;};
+    baseKernel = pkgs.callPackage "${kvmdNixosHardware}/raspberry-pi/common/kernel.nix" {rpiVersion = 4;};
   in
     pkgs.linuxPackagesFor (baseKernel.override {
       argsOverride.kernelPatches = baseKernel.kernelPatches ++ pikvmKernelPatches;
