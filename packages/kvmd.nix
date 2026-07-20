@@ -35,6 +35,13 @@
     none /var/lib/kvmd/pst none rw,X-kvmd.pst-user=kvmd-pst,X-kvmd.pst-group=kvmd-pst 0 0
   '';
 
+  # https://github.com/NixOS/nixpkgs/pull/521619
+  ustreamer-python = python.pkgs.toPythonModule (
+    ustreamer.override {
+      python3Packages = python.pkgs;
+    }
+  );
+
   # deps mirror the Arch PKGBUILD; kvmd's setup.py declares none
   kvmdPythonDeps = ps:
     with ps; [
@@ -69,20 +76,10 @@
       six
       spidev
       systemd-python
+      ustreamer-python
       xlib
       zstandard
     ];
-
-  # ustreamer's python C-extension lives in the µStreamer tree, not nixpkgs
-  ustreamer-python = python.pkgs.buildPythonPackage {
-    pname = "ustreamer";
-    inherit (ustreamer) version src;
-    format = "setuptools";
-    sourceRoot = "${ustreamer.src.name}/python";
-    pythonImportsCheck = ["ustreamer"];
-  };
-
-  allPythonDeps = ps: kvmdPythonDeps ps ++ [ustreamer-python];
 
   tools = {
     ustreamer = lib.getExe ustreamer;
@@ -114,7 +111,7 @@ in
       hash = "sha256-AthjoH5PMcbDYeSXVuDbsJ/3zZzLMOu0XkfMHpR/LBI=";
     };
 
-    propagatedBuildInputs = allPythonDeps python.pkgs;
+    propagatedBuildInputs = kvmdPythonDeps python.pkgs;
 
     pythonImportsCheck = ["kvmd" "kvmd.apps.kvmd"];
 
